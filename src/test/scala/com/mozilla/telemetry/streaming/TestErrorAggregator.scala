@@ -8,6 +8,7 @@ import java.sql.Timestamp
 
 import com.mozilla.telemetry.streaming.TestUtils.Fennec
 import org.apache.commons.io.FileUtils
+import org.apache.log4j.{Logger,Level}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.StreamingQueryListener
 import org.json4s.DefaultFormats
@@ -404,18 +405,26 @@ class TestErrorAggregator extends FlatSpec with Matchers with BeforeAndAfterAll 
   }
 
   "display version" can "be undefined" in {
-    import spark.implicits._
-    val messages = TestUtils.generateMainMessages(
-      1, None, None, "displayVersion" :: Nil
-    ).map(_.toByteArray).seq
+    // silence intentional http failed logs
+    val httpSinkLogger = Logger.getLogger("HttpSinkLogger")
+    val prevLogLevel = httpSinkLogger.getLevel
+    httpSinkLogger.setLevel(Level.ERROR)
+    try {
+      import spark.implicits._
+      val messages = TestUtils.generateMainMessages(
+        1, None, None, "displayVersion" :: Nil
+      ).map(_.toByteArray).seq
 
-    val df = ErrorAggregator.aggregate(spark.sqlContext.createDataset(messages).toDF, raiseOnError = false,
-      ErrorAggregator.defaultDimensionsSchema, ErrorAggregator.defaultMetricsSchema,
-      ErrorAggregator.defaultCountHistogramErrorsSchema)
+      val df = ErrorAggregator.aggregate(spark.sqlContext.createDataset(messages).toDF, raiseOnError = false,
+        ErrorAggregator.defaultDimensionsSchema, ErrorAggregator.defaultMetricsSchema,
+        ErrorAggregator.defaultCountHistogramErrorsSchema)
 
-    // 1 for each experiment (there are 2), and one for a null experiment
-    df.where("display_version IS NULL").collect().length should be (3)
-    // should be no cases where displayVersion is null for this test case
-    df.where("display_version <> NULL").collect().length should be (0)
+      // 1 for each experiment (there are 2), and one for a null experiment
+      df.where("display_version IS NULL").collect().length should be (3)
+      // should be no cases where displayVersion is null for this test case
+      df.where("display_version <> NULL").collect().length should be (0)
+    } finally {
+      httpSinkLogger.setLevel(prevLogLevel)
+    }
   }
 }

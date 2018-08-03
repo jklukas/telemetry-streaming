@@ -100,16 +100,16 @@ jobs:
           command: |
             bash <(curl -s https://codecov.io/bash)
 
-  # Publish to Maven in S3 and assemble an uberjar for the deploy step.
+  # Assemble an uberjar for the deploy step.
   assembly:
     <<: *common_settings
     steps:
       - run: *early_return_for_forked_pull_requests
       - checkout
       - run:
-          name: Publish and Assemble
+          name: Assembly
           command: |
-            sbt publish assembly
+            sbt assembly
       - save_cache: *save_cache_settings
       - persist_to_workspace:
           root: target

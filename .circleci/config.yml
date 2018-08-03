@@ -101,7 +101,7 @@ jobs:
       - run:
           name: Scalatest
           command: |
-            sbt clean compile test:compile scalastyle test:scalastyle coverage "test -l DockerComposeTag" coverageReport
+            sbt clean compile test:compile scalastyle test:scalastyle coverage "test -- -l DockerComposeTag" coverageReport
       - run:
           name: Submit code coverage data
           command: |

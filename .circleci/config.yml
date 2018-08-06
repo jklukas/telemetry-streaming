@@ -78,6 +78,7 @@ jobs:
       - image: wurstmeister/kafka
         environment:
           KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_HOST_NAME: localhost
     steps:
       - checkout
       - run: *early_return_for_skip_tests
